@@ -11,6 +11,7 @@ services:
       - modsec-logs:/mnt/modsec-logs:ro
       - firewall-logs:/mnt/firewall-logs:ro
       - nginx-logs:/mnt/nginx-logs:ro
+      - ./firewall/config/nftables.conf:/mnt/firewall-config/nftables.conf
     depends_on:
       - db
     environment:

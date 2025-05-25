@@ -58,11 +58,28 @@ def dashboard():
         cur = conn.cursor()
         cur.execute("SELECT nom FROM users WHERE email = %s", (email,))
         user_data = cur.fetchone()
+        cur.execute("SELECT client_ip, host_cible, uri, method, attack_type, status, created_at FROM waf_logs ORDER BY created_at DESC LIMIT 3")
+        logs = cur.fetchall()
         conn.close()
         if user_data:
             nom = user_data[0]
-            return render_template('index.html', nom=nom)
+            return render_template('index.html', nom=nom, logs=logs)
     return redirect(url_for('login'))
 
+@app.route('/logs')
+def logs():
+    if 'email' in session:
+        email = session['email']
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT nom FROM users WHERE email = %s", (email,))
+        user_data = cur.fetchone()
+        cur.execute("SELECT client_ip, host_cible, uri, method, attack_type, status, created_at FROM waf_logs ORDER BY created_at DESC LIMIT 100")
+        logs = cur.fetchall()
+        conn.close()
+        if user_data:
+            nom = user_data[0]
+            return render_template('logs.html', nom=nom, logs=logs)
+    return redirect(url_for('login'))
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

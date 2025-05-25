@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Copier le reste de l'application Flask
 COPY . .
 
@@ -23,4 +26,5 @@ COPY . .
 EXPOSE 5000
 
 # Commande pour démarrer l'app Flask
-CMD ["python", "app.py"]
+CMD ["/entrypoint.sh"]
+
