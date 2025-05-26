@@ -32,16 +32,16 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-#  phpmyadmin:
-#    image: phpmyadmin/phpmyadmin:5
-#    container_name: phpmyadmin
-#    restart: always
-#    ports:
-#      - "8080:80"
-#    environment:
-#      PMA_HOST: db
-#      PMA_USER: root
-#      PMA_PASSWORD: root
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
 
   waf:
     build: ./waf
@@ -65,11 +65,11 @@ services:
       - ./firewall/config/nftables.conf:/etc/nftables.conf:ro
       - firewall-logs:/var/log
 
-#  dvwa:
-#    image: vulnerables/web-dvwa
-#    container_name: dvwa
-#    ports:
-#      - "8081:80"
+  dvwa:
+    image: vulnerables/web-dvwa
+    container_name: dvwa
+    ports:
+      - "8081:80"
 
 volumes:
   db_data:
