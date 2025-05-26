@@ -1,0 +1,17 @@
++ can be done soon:
+	- don't expose mysql (port 3306 can be accessed from anyone)
+	- who depends on who on docker-compose
+	- admin.local dvwa.local not working
+	- why use print in python
+	- use JiRa
++ to verify:
+	- is time format long enough to log bruteforce (if short, very close request maybe seen as duplicate in db. i'm just guessing idk)
++ to discus:
+	- waf rules (there are more security related non crs rules)
+	- add DOS plugin,...
+	- delete phpmyadmin
+	
++ In the end:
+	- Hide keys and env variables (in code and dockerfile/compose)
+	- Hide errors (flask gives very verbose errors)
+	
