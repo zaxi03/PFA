@@ -31,7 +31,7 @@ services:
       MYSQL_DATABASE: flask_db
     volumes:
       - db_data:/var/lib/mysql
-
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:5
     container_name: phpmyadmin
