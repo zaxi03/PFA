@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
     python3-dev \
     build-essential \
+    logrotate \
+    cron \
     && rm -rf /var/lib/apt/lists/*
 
 # Copier le fichier requirements.txt et installer les packages Python
@@ -18,6 +20,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+# Copier la configuration de logrotate
+COPY config/logrotate.conf /etc/logrotate.conf
+
+# Configurer le cron job
+COPY config/logrotate-cron /etc/cron.d/logrotate-cron
+RUN chmod 0644 /etc/cron.d/logrotate-cron
+RUN touch /var/log/cron.log
+RUN crontab /etc/cron.d/logrotate-cron
 
 # Copier le reste de l'application Flask
 COPY . .
