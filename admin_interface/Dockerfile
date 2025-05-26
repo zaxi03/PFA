@@ -22,10 +22,10 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Copier la configuration de logrotate
-COPY config/logrotate.conf /etc/logrotate.conf
+# COPY logs_config/logrotate.conf /etc/logrotate.conf
 
 # Configurer le cron job
-COPY config/logrotate-cron /etc/cron.d/logrotate-cron
+COPY logs_config/logrotate-cron /etc/cron.d/logrotate-cron
 RUN chmod 0644 /etc/cron.d/logrotate-cron
 RUN touch /var/log/cron.log
 RUN crontab /etc/cron.d/logrotate-cron

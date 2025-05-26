@@ -1,0 +1,3 @@
+# Run logrotate daily at midnight
+0 0 * * * root /usr/sbin/logrotate /app/logs_config/logrotate.conf >> /var/log/cron.log 2>&1
+5 1 * * * root /bin/bash /app/logs_config/cleanup_db.sh >> /var/log/cleanup_db.log 2>&1

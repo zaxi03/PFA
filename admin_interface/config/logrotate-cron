@@ -1,2 +1,0 @@
-# Run logrotate daily at midnight
-0 0 * * * root /usr/sbin/logrotate /etc/logrotate.conf >> /var/log/cron.log 2>&1
