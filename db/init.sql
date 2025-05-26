@@ -16,7 +16,7 @@ WHERE NOT EXISTS (
     SELECT email FROM users WHERE email = 'admin@example.com'
 ) LIMIT 1;
 
-CREATE TABLE your_table_name (
+CREATE TABLE waf_logs (
     id INT NOT NULL AUTO_INCREMENT,
     client_ip VARCHAR(45) COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
     host_cible VARCHAR(255) COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
