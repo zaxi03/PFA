@@ -81,5 +81,13 @@ def logs():
             nom = user_data[0]
             return render_template('logs.html', nom=nom, logs=logs)
     return redirect(url_for('login'))
+
+@app.route('/firewall')
+def firewall():
+    return render_template('firewall.html')
+
+
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
