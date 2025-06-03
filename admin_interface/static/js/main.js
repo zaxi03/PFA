@@ -1,6 +1,9 @@
 (function ($) {
     "use strict";
 
+    var trafficChart = null;
+    var doughnutChart = null;
+
     // Spinner
     var spinner = function () {
         setTimeout(function () {
@@ -11,7 +14,7 @@
     };
     spinner();
 
-    // Back to top button
+    // Back to top
     $(window).scroll(function () {
         if ($(this).scrollTop() > 300) {
             $('.back-to-top').fadeIn('slow');
@@ -30,77 +33,129 @@
         return false;
     });
 
-    // Chart Global Color
+    // Chart style global
     Chart.defaults.color = "#6C7293";
     Chart.defaults.borderColor = "#000000";
 
-    // Attendre que le DOM soit prêt
+    // Animation compteur
+    function animateValue(id, start, end, duration) {
+        const el = document.getElementById(id);
+        let startTime = null;
+
+        const step = (timestamp) => {
+            if (!startTime) startTime = timestamp;
+            const progress = Math.min((timestamp - startTime) / duration, 1);
+            el.innerText = Math.floor(progress * (end - start) + start);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+
+    // DOM Ready
     $(document).ready(function () {
-        // Trafic autorisé vs bloqué (Line Chart)
+
+        // --- TRAFIC AUTORISÉ / BLOQUÉ ---
         const salseRevenueCanvas = document.getElementById("salse-revenue");
         if (salseRevenueCanvas) {
             const salseRevenueCtx = salseRevenueCanvas.getContext("2d");
-            new Chart(salseRevenueCtx, {
-                type: "line",
-                data: {
-                    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-                    datasets: [
-                        {
-                            label: "Trafic autorisé",
-                            data: [120, 190, 300, 250, 220, 300],
-                            borderColor: "rgb(75, 192, 192)",
-                            fill: false,
-                            tension: 0.4
+
+            fetch("/api/traffics/hourly")
+                .then(response => response.json())
+                .then(data => {
+                    if (trafficChart) trafficChart.destroy();
+
+                    trafficChart = new Chart(salseRevenueCtx, {
+                        type: "line",
+                        data: {
+                            labels: data.hours,
+                            datasets: [
+                                {
+                                    label: "Trafic autorisé",
+                                    data: data.authorized,
+                                    borderColor: "rgb(75, 192, 192)",
+                                    fill: false,
+                                    tension: 0.4
+                                },
+                                {
+                                    label: "Trafic bloqué",
+                                    data: data.blocked,
+                                    borderColor: "rgb(255, 99, 132)",
+                                    fill: false,
+                                    tension: 0.4
+                                }
+                            ]
                         },
-                        {
-                            label: "Trafic bloqué",
-                            data: [60, 80, 200, 150, 180, 160],
-                            borderColor: "rgb(255, 99, 132)",
-                            fill: false,
-                            tension: 0.4
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { labels: { color: "#fff" } }
+                            },
+                            scales: {
+                                x: {
+                                    title: { display: true, text: "Heure", color: "#fff" },
+                                    ticks: { color: "#fff" }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { color: "#fff" }
+                                }
+                            }
                         }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            labels: { color: "#fff" }
-                        }
-                    }
-                }
-            });
+                    });
+
+                    const totalAuthorized = data.authorized.reduce((a, b) => a + b, 0);
+                    const totalBlocked = data.blocked.reduce((a, b) => a + b, 0);
+
+                    animateValue("count-authorized", 0, totalAuthorized, 1000);
+                    animateValue("count-blocked", 0, totalBlocked, 1000);
+                })
+                .catch(error => console.error("Erreur fetch trafic:", error));
         }
 
-        // Attaques fréquentes (Doughnut Chart)
+        // --- ATTAQUES FRÉQUENTES (Doughnut dynamique) ---
         const doughnutCanvas = document.getElementById("doughnut-chart");
         if (doughnutCanvas) {
             const doughnutCtx = doughnutCanvas.getContext("2d");
-            new Chart(doughnutCtx, {
-                type: "doughnut",
-                data: {
-                    labels: ["SQLi", "XSS", "BruteForce"],
-                    datasets: [{
-                        label: "Types d'attaques",
-                        data: [40, 25, 35],
-                        backgroundColor: [
-                            "rgba(255, 99, 132, 0.7)",
-                            "rgba(54, 162, 235, 0.7)",
-                            "rgba(255, 206, 86, 0.7)"
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            labels: { color: "#fff" }
+
+            fetch("/api/attacks/types")
+                .then(res => res.json())
+                .then(data => {
+                    const labels = Object.keys(data);
+                    const values = Object.values(data);
+                    const colors = [
+                        "rgba(255, 99, 132, 0.7)",
+                        "rgba(54, 162, 235, 0.7)",
+                        "rgba(255, 206, 86, 0.7)",
+                        "rgba(75, 192, 192, 0.7)",
+                        "rgba(153, 102, 255, 0.7)"
+                    ];
+
+                    if (doughnutChart) doughnutChart.destroy();
+
+                    doughnutChart = new Chart(doughnutCtx, {
+                        type: "doughnut",
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: "Types d'attaques",
+                                data: values,
+                                backgroundColor: colors.slice(0, labels.length),
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { labels: { color: "#fff" } }
+                            }
                         }
-                    }
-                }
-            });
+                    });
+                })
+                .catch(err => console.error("Erreur doughnut-chart :", err));
         }
+
     });
 
 })(jQuery);

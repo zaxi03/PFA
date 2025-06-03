@@ -1,17 +1,30 @@
-FROM debian:bookworm
+FROM debian:stable-slim
 
-# Installer nftables, rsyslog, etc.
-RUN apt update && \
-    apt install -y nftables iproute2 iputils-ping curl net-tools rsyslog && \
-    apt clean
+# Installation des dépendances nécessaires
+RUN apt-get update && apt-get install -y \
+    iproute2 \
+    nftables \
+    curl \
+    python3 \
+    python3-pip \
+    python3-venv \
+    rsyslog \
+    && apt-get clean
 
-# Fichier de règles (optionnel selon ton usage)
-# COPY nftables.conf /etc/nftables.conf
-COPY rsyslog-nftables.conf /etc/rsyslog.d/30-nftables.conf
+# Créer un environnement virtuel pour Python
+RUN python3 -m venv /opt/venv
 
-# Script d’entrée
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+# Ajouter l’environnement virtuel au PATH
+ENV PATH="/opt/venv/bin:$PATH"
 
-CMD ["/start.sh"]
+# Copier les fichiers de configuration et de l'application
+COPY config/nftables.conf /etc/nftables.conf
+COPY app /app
+WORKDIR /app
 
+# Installer les dépendances Python
+RUN pip install --upgrade pip \
+    && pip install -r requirements.txt
+
+# Appliquer les règles nftables puis démarrer l'application Flask
+CMD ["sh", "-c", "nft -f /etc/nftables.conf && python firewall_api.py && service rsyslog start"]

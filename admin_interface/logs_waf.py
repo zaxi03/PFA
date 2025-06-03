@@ -4,6 +4,7 @@ import MySQLdb
 from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import re
 
 LOG_PATH = "/mnt/modsec-logs/modsec_audit.log"
 
@@ -37,6 +38,7 @@ def parse_and_insert(line):
             tags = messages[0]["details"].get("tags", [])
             if len(tags) >= 4:
                 attack_type = tags[3]
+                attack_type = re.sub(r'^attack-', '', attack_type)
             else:
                 attack_type = ""
         else:

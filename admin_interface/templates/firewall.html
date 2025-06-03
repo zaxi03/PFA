@@ -11,7 +11,7 @@
     <!-- Google Web Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Roboto:wght@500;700&display=swap" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Roboto:wght@500;700&display=swap" rel="stylesheet">
 
     <!-- Icon Font Stylesheet -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -65,10 +65,10 @@
                     </div>
                 </div>
                 <div class="navbar-nav w-100">
-                    <a href="{{ url_for('dashboard') }}" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
+                    <a href="{{ url_for('dashboard') }}" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
                     <a href="{{ url_for('logs') }}" class="nav-item nav-link"><i class="fas fa-file-alt me-2"></i>Logs</a>
                     <a href="#" class="nav-item nav-link "><i class="fas fa-shield-alt me-2"></i>WAF</a>
-                    <a href="#" class="nav-item nav-link "><i class="fas fa-fire me-2"></i>Firewall</a>
+                    <a href="{{ url_for('firewall') }}" class="nav-item nav-link active"><i class="fas fa-fire me-2"></i>Firewall</a>
                     <a href="{{ url_for('logout') }}" class="nav-item nav-link"><i class="fas fa-sign-out-alt me-2"></i>Log Out</a>
                 </div>
             </nav>
@@ -104,141 +104,147 @@
 
         <!-- ======== PARTIE 1 : Liste IP bloquées ======== -->
         <div class="col-12">
-            <div class="bg-secondary rounded h-100 p-4">
-                <h5 class="mb-4 text-white">Blocage des adresses IP</h5>
-
-                <!-- Champ pour bloquer une IP -->
-                <form class="d-flex mb-3">
-                    <input type="text" class="form-control me-2" placeholder="Entrer une adresse IP à bloquer" required>
-                    <button type="submit" class="btn btn-danger">Bloquer</button>
-                </form>
-
-                <!-- Liste des IP bloquées -->
-                <div class="ip-blacklist">
-                    <ul class="list-group">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            192.168.1.100
-                            <button class="btn btn-sm btn-outline-danger">Débloquer</button>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            10.0.0.45
-                            <button class="btn btn-sm btn-outline-danger">Débloquer</button>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            172.16.0.12
-                            <button class="btn btn-sm btn-outline-danger">Débloquer</button>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+    <div class="bg-secondary rounded p-4 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="text-white mb-0">
+                <i class="bi bi-shield-shaded me-2 text-danger"></i>Blocage des adresses IP
+            </h5>
+            <span class="badge bg-danger">{{ blocked_ips|length }} IP bloquées</span>
         </div>
+
+        <!-- Formulaire de blocage -->
+        <form class="d-flex mb-4" method="POST">
+            <input type="hidden" name="form_type" value="block_ip">
+            <input type="text" class="form-control me-2 bg-dark text-white border-0" name="block_ip" placeholder="Entrer une adresse IP à bloquer" required>
+            <button type="submit" class="btn btn-danger px-4">
+                <i class="bi bi-plus-circle me-1"></i>Bloquer
+            </button>
+        </form>
+
+        <!-- Liste des IP bloquées -->
+        <div class="ip-blacklist">
+            {% if blocked_ips %}
+            <ul class="list-group">
+                {% for blocked_ip in blocked_ips %}
+                <li class="list-group-item d-flex justify-content-between align-items-center
+                            bg-dark text-white border-0 {% if loop.index0 % 2 == 0 %}bg-opacity-75{% else %}bg-opacity-50{% endif %}">
+                    <div>
+                        <i class="bi bi-shield-lock-fill text-warning me-2"></i>
+                        <span class="fw-bold">{{ blocked_ip[0] }}</span>
+                        <small class="text-muted ms-2">({{ blocked_ip[1] }})</small>
+                    </div>
+                    <form method="POST" class="m-0">
+                        <input type="hidden" name="form_type" value="unblock_ip">
+                        <input type="hidden" name="unblock_ip" value="{{ blocked_ip[0] }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                            <i class="bi bi-x-circle me-1"></i>Débloquer
+                        </button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted">Aucune adresse IP bloquée actuellement.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
 
         <!-- ======== PARTIE 2 : Règles du firewall ======== -->
-        <div class="col-12">
-            <div class="bg-secondary rounded h-100 p-4">
-                <div class="d-flex justify-content-between mb-3">
-                    <h5 class="text-white">Règles du Firewall</h5>
-                    <!-- Bouton pour ouvrir la modale -->
-<button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addRuleModal">
-    Ajouter une règle
-</button>
+<!-- ======== PARTIE 2 : Règles du firewall ======== -->
+<div class="col-12">
+    <div class="bg-secondary rounded h-100 p-4">
+        <h5 class="text-white mb-4">Règles du Firewall</h5>
 
-<!-- Modale Bootstrap -->
-<div class="modal fade" id="addRuleModal" tabindex="-1" aria-labelledby="addRuleModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark text-white">
-      <div class="modal-header">
-        <h5 class="modal-title" id="addRuleModalLabel">Nouvelle règle firewall</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form id="addRuleForm">
-          <div class="mb-3">
-            <label for="ipSource" class="form-label">IP Source</label>
-            <input type="text" class="form-control" id="ipSource" placeholder="ex: 192.168.1.0/24" required>
-          </div>
-          <div class="mb-3">
-            <label for="port" class="form-label">Port</label>
-            <input type="number" class="form-control" id="port" placeholder="ex: 80" required>
-          </div>
-          <div class="mb-3">
-            <label for="protocol" class="form-label">Protocole</label>
-            <select class="form-select" id="protocol" required>
-              <option value="TCP" selected>TCP</option>
-              <option value="UDP">UDP</option>
-              <option value="ICMP">ICMP</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="action" class="form-label">Action</label>
-            <select class="form-select" id="action" required>
-              <option value="ACCEPT" selected>ACCEPT</option>
-              <option value="DROP">DROP</option>
-              <option value="REJECT">REJECT</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="comment" class="form-label">Commentaire</label>
-            <input type="text" class="form-control" id="comment" placeholder="ex: autoriser le trafic HTTP">
-          </div>
-          <div class="text-end">
-            <button type="submit" class="btn btn-primary">Enregistrer</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
+        <!-- Formulaire intégré -->
+        <form method="POST" class="mb-4">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="port" class="form-label text-white">Port</label>
+                    <input type="number" class="form-control bg-dark text-light" id="port" name="port" required>
                 </div>
-
-                <!-- Tableau statique -->
-                <div class="table-responsive">
-                    <table class="table table-dark table-striped">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>IP Source</th>
-                                <th>Port</th>
-                                <th>Protocole</th>
-                                <th>Action</th>
-                                <th>Commentaire</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>192.168.1.0/24</td>
-                                <td>80</td>
-                                <td>TCP</td>
-                                <td>ACCEPT</td>
-                                <td>Accès web interne</td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td>0.0.0.0/0</td>
-                                <td>22</td>
-                                <td>TCP</td>
-                                <td>DROP</td>
-                                <td>Bloque SSH public</td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td>10.0.0.0/8</td>
-                                <td>3306</td>
-                                <td>TCP</td>
-                                <td>ACCEPT</td>
-                                <td>Connexion MySQL interne</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
+                <div class="col-md-3 mb-3">
+                    <label for="protocol" class="form-label text-white">Protocole</label>
+                    <select class="form-select bg-dark text-light" id="protocol" name="protocol" required>
+                        <option value="tcp">TCP</option>
+                        <option value="udp">UDP</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="action" class="form-label text-white">Action</label>
+                    <select class="form-select bg-dark text-light" id="action" name="action" required>
+                        <option value="accept">Accepter</option>
+                        <option value="drop">Bloquer</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="comment" class="form-label text-white">Commentaire</label>
+                    <input type="text" class="form-control bg-dark text-light" id="comment" name="comment" placeholder="(facultatif)">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="source_ip" class="form-label text-white">IP Source</label>
+                    <input type="text" class="form-control bg-dark text-light" id="source_ip" name="source_ip" placeholder="0.0.0.0/0">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="destination_ip" class="form-label text-white">IP Destination</label>
+                    <input type="text" class="form-control bg-dark text-light" id="destination_ip" name="destination_ip" placeholder="0.0.0.0/0">
                 </div>
             </div>
-        </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">Ajouter la règle</button>
+            </div>
+        </form>
+
+        <!-- Tableau statique (exemple) -->
+        <div class="table-responsive mt-4">
+    <table class="table table-dark table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Protocole</th>
+                <th>Port</th>
+                <th>Action</th>
+                <th>IP Source</th>
+                <th>IP Destination</th>
+                <th>Commentaire</th>
+                <th class="text-center"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rule in rules %}
+            <tr>
+                <td>{{ rule[0] }}</td>
+                <td>{{ rule[1] }}</td>
+                <td>{{ rule[2] }}</td>
+                <td>{{ rule[3] }}</td>
+                <td>{{ rule[4] }}</td>
+                <td>{{ rule[5] }}</td>
+                <td class="text-center">
+                    <form method="POST" class="d-inline">
+                        <input type="hidden" name="form_type" value="delete_rule">
+                        <input type="hidden" name="protocol" value="{{ rule[0] }}">
+                        <input type="hidden" name="port" value="{{ rule[1] }}">
+                        <input type="hidden" name="action" value="{{ rule[2] }}">
+                        <input type="hidden" name="source_ip" value="{{ rule[3] }}">
+                        <input type="hidden" name="destination_ip" value="{{ rule[4] }}">
+                        <input type="hidden" name="comment" value="{{ rule[5] }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                            <i class="bi bi-trash"></i> Supprimer
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
     </div>
 </div>
+
+
+
 
 
         <!-- Content End -->

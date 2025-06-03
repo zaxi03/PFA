@@ -68,7 +68,7 @@
                     <a href="{{ url_for('dashboard') }}" class="nav-item nav-link "><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
                     <a href="{{ url_for('logs') }}" class="nav-item nav-link active"><i class="fas fa-file-alt me-2"></i>Logs</a>
                     <a href="#" class="nav-item nav-link "><i class="fas fa-shield-alt me-2"></i>WAF</a>
-                    <a href="#" class="nav-item nav-link "><i class="fas fa-fire me-2"></i>Firewall</a>
+                    <a href="{{ url_for('firewall') }}" class="nav-item nav-link "><i class="fas fa-fire me-2"></i>Firewall</a>
                     <a href="{{ url_for('logout') }}" class="nav-item nav-link"><i class="fas fa-sign-out-alt me-2"></i>Log Out</a>
                 </div>
             </nav>
@@ -101,12 +101,19 @@
             <!-- Navbar End -->
             <!-- dropdown start -->
         <div class="container-fluid pt-4 px-4">
-            <div class="d-flex justify-content-end mb-3">
-                <select id="logSelector" class="form-select w-auto bg-secondary text-white border-0">
-                    <option value="waf">WAF Logs</option>
-                    <option value="firewall">Firewall Logs</option>
-                </select>
-            </div>
+    <div class="d-flex justify-content-between mb-3">
+        <div>
+            <select id="logSelector" class="form-select w-auto bg-secondary text-white border-0">
+                <option value="waf">WAF Logs</option>
+                <option value="firewall">Firewall Logs</option>
+            </select>
+        </div>
+        <div id="searchContainer">
+            <input type="text" id="searchInput" class="form-control bg-dark text-white border-0" placeholder="🔍 Rechercher IP ou Host">
+        </div>
+
+    </div>
+
             <!-- dropdown end -->
         <!-- Bloc WAF Logs -->
         <div id="wafLogs">
@@ -194,19 +201,50 @@
     <!-- Template Javascript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
-    document.getElementById('logSelector').addEventListener('change', function () {
-        const wafLogs = document.getElementById('wafLogs');
-        const firewallLogs = document.getElementById('firewallLogs');
+    const logSelector = document.getElementById('logSelector');
+    const wafLogs = document.getElementById('wafLogs');
+    const firewallLogs = document.getElementById('firewallLogs');
+    const searchContainer = document.getElementById('searchContainer');
 
+    logSelector.addEventListener('change', function () {
         if (this.value === 'waf') {
             wafLogs.style.display = 'block';
             firewallLogs.style.display = 'none';
+            searchContainer.style.display = 'block';
         } else {
             wafLogs.style.display = 'none';
             firewallLogs.style.display = 'block';
+            searchContainer.style.display = 'none';
         }
     });
-    </script>
+
+    // Filtrage par IP ou Host uniquement pour WAF
+    document.getElementById('searchInput').addEventListener('input', function () {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#wafLogs tbody tr');
+
+        rows.forEach(row => {
+            const ip = row.cells[0].textContent.toLowerCase();
+            const host = row.cells[1].textContent.toLowerCase();
+
+            if (ip.includes(filter) || host.includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // Appeler le bon affichage au chargement
+    window.addEventListener('DOMContentLoaded', () => {
+        if (logSelector.value === 'waf') {
+            searchContainer.style.display = 'block';
+        } else {
+            searchContainer.style.display = 'none';
+        }
+    });
+</script>
+
 
 </body>
 </html>

@@ -12,6 +12,8 @@ services:
       - firewall-logs:/mnt/firewall-logs:ro
       - nginx-logs:/mnt/nginx-logs:ro
       - ./firewall/config/nftables.conf:/mnt/firewall-config/nftables.conf
+    networks:
+      - common-net
     depends_on:
       - db
     environment:
@@ -31,13 +33,17 @@ services:
       MYSQL_DATABASE: flask_db
     volumes:
       - db_data:/var/lib/mysql
+    networks:
+      - common-net
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:5
     container_name: phpmyadmin
     restart: always
     ports:
-      - "8080:80"
+      - "8081:80"
+    networks:
+      - common-net
     environment:
       PMA_HOST: db
       PMA_USER: root
@@ -45,8 +51,9 @@ services:
 
   waf:
     build: ./waf
+    container_name: waf
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./waf/config/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./waf/config/modsecurity.conf:/etc/nginx/modsec/modsecurity.conf:ro
@@ -56,23 +63,44 @@ services:
       - nginx-logs:/var/log/nginx
     depends_on:
       - flask
+    networks:
+      common-net:
+        ipv4_address: 172.28.0.10
 
   firewall:
     build: ./firewall
+    container_name: firewall
+    cap_add:
+      - NET_ADMIN
     ports:
-      - "3001:80"
+      - "80:80"
+      - "9000:9000" # exposé pour API REST Flask dans firewall
     volumes:
-      - ./firewall/config/nftables.conf:/etc/nftables.conf:ro
+      - ./firewall/config/nftables.conf:/etc/nftables.conf
       - firewall-logs:/var/log
+      - ./firewall/app/:/app
+      - ./firewall/rsyslog-nftables.conf:/etc/rsyslog.d/30-nftables.conf:ro
+    networks:
+      - common-net
 
   dvwa:
     image: vulnerables/web-dvwa
     container_name: dvwa
     ports:
-      - "8081:80"
+      - "8082:80"
+    networks:
+      - common-net
 
 volumes:
   db_data:
   modsec-logs:
   firewall-logs:
   nginx-logs:
+
+networks:
+  common-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
