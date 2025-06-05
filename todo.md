@@ -1,0 +1,5 @@
+- mount only 900 and 999(no .example) and created custum
+- add file manip logic
+- commented rules?
+- other configs? engine,size,...
+- rules permissions

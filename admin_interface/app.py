@@ -155,8 +155,64 @@ def get_blocked_ips():
     blocked_ips = cur.fetchall()
     conn.close()
     return blocked_ips
+##################################################################################################
+# Create the table in init.sql # need type update
+# populate it 
+# indexing
+# paginating
+# filters
+# hover/click to get description
+def get_all_waf_rules():
+    conn = get_connection()
+    cur = conn.cursor()
+    #modify this to match the table
+    cur.execute("SELECT rule_id, origin_file, status, variables, actions, description FROM waf_rules ORDER BY rule_id ASC")
+    rules = cur.fetchall()
+    conn.close()
+    return rules
+# need to reload?
+def insert_waf_rule(description, variables, operators, actions):
+    conn = get_connection()
+    cur = conn.cursor()
+    #modify this to match the table
+    cur.execute("INSERT INTO waf_rules (description, variables, operators, actions) VALUES (%s, %s, %s)", 
+                (description, variables, operators, actions))
+    conn.commit()
+    conn.close()
 
+def delete_waf_rule(rule_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    #modify this to match the table
+    cur.execute("UPDATE waf_rules SET status = 'removed' WHERE id = %s", (rule_id))
+    conn.commit()
+    conn.close()
+    # custum file and 999
 
+def update_waf_rule(rule_id, variables = None, actions = None):
+    conn = get_connection()
+    cur = conn.cursor()
+    #modify this to match the table
+    if variables:
+        cur.execute("UPDATE waf_rules SET variables = %s WHERE id = %s", 
+                    (variables, rule_id))
+    if actions:
+        cur.execute("UPDATE waf_rules SET actions = %s WHERE id = %s", 
+                    (actions, rule_id))
+    conn.commit()
+    conn.close()
+
+def toggle_waf_rule(rule_id, current_status):
+    new_status = 'inactive' if current_status == 'active' else 'active'
+    conn = get_connection()
+    cur = conn.cursor()
+    #modify this to match the table
+    cur.execute("UPDATE waf_rules SET status = %s WHERE id = %s", (new_status, rule_id))
+    conn.commit()
+    conn.close()
+
+# add routes and POST logic
+##################################################################################################
 @app.route('/')
 def home():
     return render_template('signin.html')
@@ -292,6 +348,49 @@ def firewall():
         if user_data:
             nom = user_data[0]
             return render_template('firewall.html', rules=rules, nom=nom, blocked_ips=blocked_ips)
+    return redirect(url_for('login'))
+
+@app.route('/waf', methods=['GET', 'POST'])
+def waf():
+    if 'email' in session:
+        email = session['email']
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT nom FROM users WHERE email = %s", (email,))
+        user_data = cur.fetchone()
+        conn.close()
+        # modify to match fuctions nad table
+        if request.method == 'POST':
+            form_type = request.form.get('form_type')
+            if form_type == 'add_rule':
+                rule_description = request.form.get('description')
+                rule_variables = request.form.get('variables')
+                rule_operators = request.form.get('operators')
+                rule_actions = request.form.get('actions')
+                insert_waf_rule(rule_description, rule_variables, rule_operators, rule_actions)
+                # add error
+                flash("Règle WAF ajoutée avec succès ✅", "success")
+            elif form_type == 'delete_rule':
+                rule_id = request.form.get('rule_id')
+                delete_waf_rule(rule_id)
+                flash("Règle WAF supprimée avec succès 🚫", "success")
+            elif form_type == 'update_rule':
+                rule_id = request.form.get('rule_id')
+                rule_variables = request.form.get('variables')
+                rule_actions = request.form.get('actions')
+                update_waf_rule(rule_id, rule_variables, rule_actions)
+                flash("Règle WAF modifiée avec succès ✏️", "success")
+            elif form_type == 'toggle_status':
+                rule_id = request.form.get('rule_id')
+                current_status = request.form.get('current_status')
+                toggle_waf_rule(rule_id, current_status)
+                flash("Statut de la règle WAF modifié avec succès 🔄", "success")
+
+        rules = get_all_waf_rules()
+        
+        if user_data:
+            nom = user_data[0]
+            return render_template('waf.html', nom=nom, rules=rules)
     return redirect(url_for('login'))
 
 if __name__ == '__main__':

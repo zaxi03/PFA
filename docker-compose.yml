@@ -12,6 +12,9 @@ services:
       - firewall-logs:/mnt/firewall-logs:ro
       - nginx-logs:/mnt/nginx-logs:ro
       - ./firewall/config/nftables.conf:/mnt/firewall-config/nftables.conf
+      - ./waf/config/modsecurity.conf:/etc/nginx/modsec/modsecurity.conf:ro
+      - ./waf/config/crs-setup.conf:/usr/local/modsecurity-crs/crs-setup.conf:ro
+      - waf_rules:/usr/local/modsecurity-crs/rules
     networks:
       - common-net
     depends_on:
@@ -33,21 +36,22 @@ services:
       MYSQL_DATABASE: flask_db
     volumes:
       - db_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - common-net
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:5
-    container_name: phpmyadmin
-    restart: always
-    ports:
-      - "8081:80"
-    networks:
-      - common-net
-    environment:
-      PMA_HOST: db
-      PMA_USER: root
-      PMA_PASSWORD: root
+#  phpmyadmin:
+#    image: phpmyadmin/phpmyadmin:5
+#    container_name: phpmyadmin
+#    restart: always
+#    ports:
+#      - "8081:80"
+#    networks:
+#      - common-net
+#    environment:
+#      PMA_HOST: db
+#      PMA_USER: root
+#      PMA_PASSWORD: root
 
   waf:
     build: ./waf
@@ -61,6 +65,7 @@ services:
       - ./waf/config/default.conf:/etc/nginx/conf.d/default.conf:ro
       - modsec-logs:/var/log
       - nginx-logs:/var/log/nginx
+      - waf_rules:/usr/local/modsecurity-crs/rules
     depends_on:
       - flask
     networks:
@@ -96,6 +101,7 @@ volumes:
   modsec-logs:
   firewall-logs:
   nginx-logs:
+  waf_rules:
 
 networks:
   common-net:
