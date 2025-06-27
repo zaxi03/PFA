@@ -67,8 +67,9 @@
                 <div class="navbar-nav w-100">
                     <a href="{{ url_for('dashboard') }}" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
                     <a href="{{ url_for('logs') }}" class="nav-item nav-link"><i class="fas fa-file-alt me-2"></i>Logs</a>
-                    <a href="#" class="nav-item nav-link "><i class="fas fa-shield-alt me-2"></i>WAF</a>
+                    <a href="{{ url_for('waf') }}" class="nav-item nav-link "><i class="fas fa-shield-alt me-2"></i>WAF</a>
                     <a href="{{ url_for('firewall') }}" class="nav-item nav-link active"><i class="fas fa-fire me-2"></i>Firewall</a>
+                    <a href="{{ url_for('apps') }}" class="nav-item nav-link"><i class="fas fa-globe me-2"></i>Apps</a>
                     <a href="{{ url_for('logout') }}" class="nav-item nav-link"><i class="fas fa-sign-out-alt me-2"></i>Log Out</a>
                 </div>
             </nav>
@@ -101,6 +102,17 @@
             <!-- Navbar End -->
             <div class="container-fluid pt-4 px-4">
     <div class="row g-4">
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
 
         <!-- ======== PARTIE 1 : Liste IP bloquées ======== -->
         <div class="col-12">

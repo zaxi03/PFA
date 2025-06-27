@@ -3,6 +3,8 @@ import re
 from json import dumps
 from glob import glob
 import MySQLdb
+from MySQLdb import OperationalError
+from time import sleep
 
 def get_logical_lines(lines):
     logical_line = ""
@@ -57,13 +59,39 @@ def parse_modsec_rule_file(file_path):
                 commented_lines = []
     return rules
 
-def get_connection():
-    return MySQLdb.connect(
-        host="db",
-        user="root",
-        password="root",
-        database="flask_db"
-    )
+def get_connection(max_retries=20, retry_delay=5):
+    retries = 0
+    while retries < max_retries:
+        try:
+            # Attempt to connect to the MySQL database
+            conn = MySQLdb.connect(
+                host="db",
+                user="root",
+                password="root",
+                database="flask_db"
+            )
+            
+            # If connection is successful, print a message and return the connection
+            print("Connection established successfully.")
+            return conn
+        
+        except OperationalError as e:
+            retries += 1
+            print(f"Error connecting to MySQL (attempt {retries}/{max_retries}): {e}")
+            
+            if retries < max_retries:
+                print(f"Retrying in {retry_delay} seconds...")
+                sleep(retry_delay)
+            else:
+                print("Max retries reached. Could not connect to MySQL.")
+                raise  # Re-raise the exception if max retries are exceeded
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            raise  # Re-raise the exception for unexpected errors
+
+    # In case we exit the loop without successfully connecting, we return None (though this is unlikely to happen)
+    return None
+
 
 def populate_waf_rules_from_modsec():
     modsec_files = [
@@ -81,8 +109,7 @@ def populate_waf_rules_from_modsec():
             file_paths = [file_path]
         
         for file in file_paths:
-            if file.endswith('.conf'):
-                all_rules.extend(parse_modsec_rule_file(file))
+            all_rules.extend(parse_modsec_rule_file(file))
     
     # Now we need to insert these rules into the database
     conn = get_connection()

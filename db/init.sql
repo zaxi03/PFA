@@ -55,3 +55,23 @@ CREATE TABLE firewall_rules (
   comment text,
   created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE managed_apps (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    domain VARCHAR(255) NOT NULL,
+    backend_host VARCHAR(255) NOT NULL,
+    backend_port INT NOT NULL DEFAULT 80,
+    ssl_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    custom_rules BOOLEAN NOT NULL DEFAULT TRUE,
+    rate_limit VARCHAR(50),
+    status VARCHAR(50) NOT NULL DEFAULT 'active',
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME DEFAULT NULL,
+    UNIQUE KEY unique_domain (domain)
+);
+
+INSERT INTO managed_apps 
+(name, domain, backend_host, backend_port, ssl_enabled, custom_rules, rate_limit, status, created_at) 
+VALUES 
+('flask', 'flask.local', 'flask', 5000, FALSE, TRUE, NULL, 'active', CURRENT_TIMESTAMP);

@@ -2,3 +2,4 @@ flask
 mysqlclient
 watchdog
 requests
+msc-pyparser>=1.2.1

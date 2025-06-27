@@ -20,6 +20,8 @@ rm -rf /usr/share/modsecurity-crs
 git clone https://github.com/coreruleset/coreruleset /usr/local/modsecurity-crs
 #mv /usr/local/modsecurity-crs/crs-setup.conf.example /usr/local/modsecurity-crs/crs-setup.conf
 mv /usr/local/modsecurity-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example /usr/local/modsecurity-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+mv /usr/local/modsecurity-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example /usr/local/modsecurity-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
+touch /usr/local/modsecurity-crs/rules/modsecurity_crs_15_customrules.conf
 mkdir -p /etc/nginx/modsec
 cp /opt/ModSecurity/unicode.mapping /etc/nginx/modsec
 #cp /opt/ModSecurity/modsecurity.conf-recommended /etc/nginx/modsec
