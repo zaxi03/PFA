@@ -32,7 +32,7 @@ def parse_and_insert(line):
         created_at = tx.get("time_stamp")
         date = datetime.strptime(created_at, "%a %b %d %H:%M:%S %Y")
         method=tx.get("request", {}).get("method", "UNKNOWN")
-        host_cible=tx.get("request", {}).get("headers", {}).get("Host", "UNKNOWN")
+        host_cible=tx.get("request", {}).get("headers", {}).get("host", "UNKNOWN")
         messages = tx.get("messages", [])
         if messages and "details" in messages[0]:
             tags = messages[0]["details"].get("tags", [])

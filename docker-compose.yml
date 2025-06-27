@@ -79,9 +79,9 @@ services:
       - ./firewall/config/nftables.conf:/etc/nftables.conf
       - firewall-logs:/var/log
       - ./firewall/app/:/app
-      - ./firewall/rsyslog-nftables.conf:/etc/rsyslog.d/30-nftables.conf:ro
     networks:
-      - common-net
+      common-net:
+        ipv4_address: 172.28.0.11
 
   dvwa:
     image: vulnerables/web-dvwa

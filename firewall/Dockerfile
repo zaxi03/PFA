@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-venv \
     rsyslog \
+    haproxy \
     && apt-get clean
 
 # Créer un environnement virtuel pour Python
@@ -19,6 +20,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Copier les fichiers de configuration et de l'application
 COPY config/nftables.conf /etc/nftables.conf
+COPY config/haproxy.cfg /etc/haproxy/haproxy.cfg
 COPY app /app
 WORKDIR /app
 
@@ -27,4 +29,4 @@ RUN pip install --upgrade pip \
     && pip install -r requirements.txt
 
 # Appliquer les règles nftables puis démarrer l'application Flask
-CMD ["sh", "-c", "nft -f /etc/nftables.conf && python firewall_api.py && service rsyslog start"]
+CMD ["sh", "-c", "nft -f /etc/nftables.conf && haproxy -f /etc/haproxy/haproxy.cfg && python firewall_api.py && service rsyslog start"]

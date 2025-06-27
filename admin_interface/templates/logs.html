@@ -67,7 +67,7 @@
                 <div class="navbar-nav w-100">
                     <a href="{{ url_for('dashboard') }}" class="nav-item nav-link "><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
                     <a href="{{ url_for('logs') }}" class="nav-item nav-link active"><i class="fas fa-file-alt me-2"></i>Logs</a>
-                    <a href="#" class="nav-item nav-link "><i class="fas fa-shield-alt me-2"></i>WAF</a>
+                    <a href="{{ url_for('waf') }}" class="nav-item nav-link "><i class="fas fa-shield-alt me-2"></i>WAF</a>
                     <a href="{{ url_for('firewall') }}" class="nav-item nav-link "><i class="fas fa-fire me-2"></i>Firewall</a>
                     <a href="{{ url_for('logout') }}" class="nav-item nav-link"><i class="fas fa-sign-out-alt me-2"></i>Log Out</a>
                 </div>

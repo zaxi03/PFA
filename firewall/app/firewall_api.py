@@ -105,7 +105,7 @@ def block_ip():
         return jsonify({"error": "Adresse IP invalide"}), 400
 
     cmd = [
-        "nft", "add", "rule", "ip", "filter", "forward",
+        "nft", "add", "rule", "inet", "filter", "input",
         "ip", "saddr", ip,
         "drop"
     ]
@@ -134,7 +134,7 @@ def unblock_ip():
     try:
         # 1. Lister les règles avec handles
         result = subprocess.run(
-            ["nft", "--handle", "list", "chain", "ip", "filter", "forward"],
+            ["nft", "--handle", "list", "chain", "inet", "filter", "input"],
             capture_output=True,
             text=True,
             check=True
@@ -155,7 +155,7 @@ def unblock_ip():
 
         # 3. Supprimer la règle via son handle
         subprocess.run(
-            ["nft", "delete", "rule", "ip", "filter", "forward", "handle", handle],
+            ["nft", "delete", "rule", "inet", "filter", "input", "handle", handle],
             check=True
         )
         with open("/etc/nftables.conf", "w") as f:
