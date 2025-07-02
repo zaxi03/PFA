@@ -61,6 +61,10 @@
     border-radius: 50px;
 }
 
+button.btn-custom {
+    pointer-events: auto !important;
+}
+
 
 /*** Layout ***/
 .sidebar {
@@ -286,4 +290,37 @@
 .testimonial-carousel .owl-dot.active {
     background: var(--dark);
     border-color: var(--primary);
+}
+
+/* Tooltip container */
+.custom-tooltip {
+  position: relative;
+  cursor: pointer;
+}
+
+/* Tooltip styles */
+.custom-tooltip::after {
+  content: attr(data-title);
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.9); /* Lighter background */
+  color: #333; /* Dark text color */
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  top: 100%;
+  left: 90%;
+  min-width: 500px;
+  /*transform: translateX(-50%);*/
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 10;
+  white-space: normal;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1); /* Optional shadow for better contrast */
+}
+
+/* Tooltip appears on hover */
+.custom-tooltip:hover::after {
+  opacity: 1;
+  visibility: visible;
 }

@@ -19,6 +19,7 @@ app = Flask(__name__)
 app.secret_key = '6f2b7f6e72b8d3a4d8c4c013d9b3b73f914e7cdbd33b44a29c02d45c5dd5e12f'
 app.logger.setLevel(logging.DEBUG)
 
+
 def check_modsec_rules(file_path):
     script_path = '/app/rules_check/crs-rules-check/rules-check.py'
     tags_path = '/app/rules_check/APPROVED_TAGS'
@@ -312,7 +313,8 @@ Include /etc/nginx/modsec/app_rules/{app.name}_custom_modsec_rules.conf
 # Initialize WAF Manager
 waf_manager = WAFManager()
 
-# Connexion MySQL
+
+# Database functions (existing functions remain the same)
 def get_connection():
     return MySQLdb.connect(
         host="db",
@@ -321,7 +323,7 @@ def get_connection():
         database="flask_db"
     )
 
-# Récupérer utilisateur
+
 def get_user_by_email(email):
     conn = get_connection()
     cur = conn.cursor()
@@ -330,6 +332,8 @@ def get_user_by_email(email):
     conn.close()
     return user
 
+
+# App management functions
 def get_all_managed_apps():
     """Get all managed applications from database"""
     conn = get_connection()
@@ -374,6 +378,8 @@ def get_app_stats():
         'custom_rules_apps': custom_rules_apps
     }
 
+
+# firewall functions
 def insert_rule(protocol, port, action, source_ip, destination_ip, comment):
     conn = get_connection()
     cur = conn.cursor()
@@ -384,13 +390,16 @@ def insert_rule(protocol, port, action, source_ip, destination_ip, comment):
     conn.commit()
     conn.close()
 
+
 def get_all_rules():
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT protocol, port, action, source_ip, destination_ip, comment FROM firewall_rules ORDER BY id DESC")
+    cur.execute(
+        "SELECT protocol, port, action, source_ip, destination_ip, comment FROM firewall_rules ORDER BY id DESC")
     rules = cur.fetchall()
     conn.close()
     return rules
+
 
 def add_rule():
     protocol = request.form.get('protocol')
@@ -412,14 +421,15 @@ def add_rule():
     try:
         response = requests.post(FIREWALL_API_URL, json=rule)
         if response.status_code == 200:
-            flash("Règle ajoutée avec succès ✅", "success") # à modifier
+            flash("Règle ajoutée avec succès ✅", "success")
             insert_rule(protocol, port, action, source_ip, destination_ip, comment)
         else:
-            flash(f"Erreur : {response.json().get('error')}", "danger") # à modifier
+            flash(f"Erreur : {response.json().get('error')}", "danger")
     except Exception as e:
-        flash(f"Erreur de connexion au conteneur firewall : {e}", "danger") # à modifier
+        flash(f"Erreur de connexion au conteneur firewall : {e}", "danger")
 
     return redirect('/firewall')
+
 
 def delete_rule():
     protocol = request.form.get('protocol')
@@ -440,19 +450,22 @@ def delete_rule():
         try:
             response = requests.post("http://firewall:9000/delete_rule", json=rule)
             if response.status_code == 200:
-                flash(f"Régle supprimée avec succès 🚫", "success") # à modifier
+                flash(f"Régle supprimée avec succès 🚫", "success")
                 conn = get_connection()
                 cur = conn.cursor()
-                cur.execute("DELETE FROM firewall_rules WHERE protocol = (%s) AND port = (%s) AND action = (%s) AND source_ip = (%s) AND destination_ip = (%s)",(protocol, port, action, source_ip, destination_ip))
+                cur.execute(
+                    "DELETE FROM firewall_rules WHERE protocol = (%s) AND port = (%s) AND action = (%s) AND source_ip = (%s) AND destination_ip = (%s)",
+                    (protocol, port, action, source_ip, destination_ip))
                 conn.commit()
                 conn.close()
             else:
-                flash(f"Erreur API : {response.json().get('error')}", "danger") # à modifier
+                flash(f"Erreur API : {response.json().get('error')}", "danger")
         except Exception as e:
-            flash(f"Erreur de communication avec l'API firewall : {e}", "danger") # à modifier
+            flash(f"Erreur de communication avec l'API firewall : {e}", "danger")
     else:
-        flash("Régle invalide", "warning") # à modifier
+        flash("Régle invalide", "warning")
     return redirect('/firewall')
+
 
 def block_ip():
     ip = request.form.get('block_ip')
@@ -460,19 +473,20 @@ def block_ip():
         try:
             response = requests.post("http://firewall:9000/block_ip", json={"ip": ip})
             if response.status_code == 200:
-                flash(f"IP {ip} bloquée avec succès 🚫", "success") # à modifier
+                flash(f"IP {ip} bloquée avec succès 🚫", "success")
                 conn = get_connection()
                 cur = conn.cursor()
-                cur.execute("INSERT INTO blocked_ips (ip_address) VALUES (%s)",(ip,))
+                cur.execute("INSERT INTO blocked_ips (ip_address) VALUES (%s)", (ip,))
                 conn.commit()
                 conn.close()
             else:
-                flash(f"Erreur API : {response.json().get('error')}", "danger") # à modifier
+                flash(f"Erreur API : {response.json().get('error')}", "danger")
         except Exception as e:
-            flash(f"Erreur de communication avec l'API firewall : {e}", "danger") # à modifier
+            flash(f"Erreur de communication avec l'API firewall : {e}", "danger")
     else:
-        flash("Adresse IP invalide", "warning") # à modifier
+        flash("Adresse IP invalide", "warning")
     return redirect('/firewall')
+
 
 def unblock_ip():
     ip = request.form.get('unblock_ip')
@@ -480,19 +494,20 @@ def unblock_ip():
         try:
             response = requests.post("http://firewall:9000/unblock_ip", json={"ip": ip})
             if response.status_code == 200:
-                flash(f"IP {ip} debloquée avec succès 🚫", "success") # à modifier
+                flash(f"IP {ip} debloquée avec succès 🚫", "success")
                 conn = get_connection()
                 cur = conn.cursor()
-                cur.execute("DELETE FROM blocked_ips WHERE ip_address = (%s)",(ip,))
+                cur.execute("DELETE FROM blocked_ips WHERE ip_address = (%s)", (ip,))
                 conn.commit()
                 conn.close()
             else:
-                flash(f"Erreur API : {response.json().get('error')}", "danger") # à modifier
+                flash(f"Erreur API : {response.json().get('error')}", "danger")
         except Exception as e:
-            flash(f"Erreur de communication avec l'API firewall : {e}", "danger") # à modifier
+            flash(f"Erreur de communication avec l'API firewall : {e}", "danger")
     else:
-        flash("Adresse IP invalide", "warning") # à modifier
+        flash("Adresse IP invalide", "warning")
     return redirect('/firewall')
+
 
 def get_blocked_ips():
     conn = get_connection()
@@ -501,6 +516,7 @@ def get_blocked_ips():
     blocked_ips = cur.fetchall()
     conn.close()
     return blocked_ips
+
 
 # WAF rules functions
 def get_all_waf_rules(page=1, per_page=15, filters=None):
@@ -586,6 +602,15 @@ def insert_waf_rule_in_file(app, id, description, var, op, act):
         f.write(c_description + '\n')
         f.write(f'SecRule {variables} {operators} \\\n    "{actions}"\n\n')
         return True
+    # is_valid, message = check_modsec_rules(f"/etc/nginx/modsec/app_rules/{app}_custom_modsec_rules.conf")
+
+    # if not is_valid:
+    #   flash(f"Erreur de validation ModSecurity : {message}", "danger")
+    #  return
+
+
+#  else:
+#     flash("Règles ModSecurity validées avec succès ✅", "success")
 
 def insert_waf_rule(app, description, variables, operators, actions):
     #    try:
@@ -618,6 +643,7 @@ def insert_waf_rule(app, description, variables, operators, actions):
          f"/etc/nginx/modsec/app_rules/{app}_custom_modsec_rules.conf"))
     conn.commit()
     conn.close()
+
 
 def delete_waf_rule_from_file(file_path, rule_text):
     with open(file_path, 'r') as f:
@@ -732,11 +758,12 @@ def toggle_waf_rule(app, rule_id, current_status):
     conn.commit()
     conn.close()
 
-# add routes and POST logic
-##################################################################################################
+
+# Routes
 @app.route('/')
 def home():
     return render_template('signin.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -747,17 +774,21 @@ def login():
         user = get_user_by_email(email)
         if user and check_password_hash(user[2], password):
             session['email'] = user[1]
+            app.logger.info('Connexion réussie ✅')  # à modifier
             return redirect(url_for('dashboard'))
         else:
-            flash('Email ou mot de passe incorrect ❌', 'danger') # à modifier
+            app.logger.error('Email ou mot de passe incorrect ❌')  # à modifier
 
     return render_template('signin.html')
+
 
 @app.route('/logout')
 def logout():
     # Supprime toutes les données de session
     session.clear()
+    app.logger.info("Déconnexion réussie 👋")  # à modifier
     return redirect(url_for('home'))
+
 
 @app.route('/dashboard')
 def dashboard():
@@ -767,7 +798,8 @@ def dashboard():
         cur = conn.cursor()
         cur.execute("SELECT nom FROM users WHERE email = %s", (email,))
         user_data = cur.fetchone()
-        cur.execute("SELECT client_ip, host_cible, uri, method, attack_type, status, created_at FROM waf_logs ORDER BY created_at DESC LIMIT 5")
+        cur.execute(
+            "SELECT client_ip, host_cible, uri, method, attack_type, status, created_at FROM waf_logs ORDER BY created_at DESC LIMIT 5")
         logs = cur.fetchall()
         cur.execute("SELECT ip_address, blocked_at FROM blocked_ips ORDER BY blocked_at DESC LIMIT 10")
         blocked_ips = cur.fetchall()
@@ -777,6 +809,7 @@ def dashboard():
             return render_template('index.html', nom=nom, logs=logs, blocked_ips=blocked_ips)
     return redirect(url_for('login'))
 
+
 @app.route('/logs')
 def logs():
     if 'email' in session:
@@ -785,13 +818,15 @@ def logs():
         cur = conn.cursor()
         cur.execute("SELECT nom FROM users WHERE email = %s", (email,))
         user_data = cur.fetchone()
-        cur.execute("SELECT client_ip, host_cible, uri, method, attack_type, status, created_at FROM waf_logs ORDER BY created_at DESC LIMIT 100")
+        cur.execute(
+            "SELECT client_ip, host_cible, uri, method, attack_type, status, created_at FROM waf_logs ORDER BY created_at DESC LIMIT 100")
         logs = cur.fetchall()
         conn.close()
         if user_data:
             nom = user_data[0]
             return render_template('logs.html', nom=nom, logs=logs)
     return redirect(url_for('login'))
+
 
 @app.route("/api/traffics/hourly")
 def hourly_traffic():
@@ -842,7 +877,9 @@ def attack_type_stats():
     stats = {row[0]: row[1] for row in rows}
     return jsonify(stats)
 
+
 FIREWALL_API_URL = "http://firewall:9000/add_rule"
+
 
 @app.route('/firewall', methods=['GET', 'POST'])
 def firewall():
@@ -857,18 +894,19 @@ def firewall():
             form_type = request.form.get('form_type')
             if form_type == 'block_ip':
                 block_ip()
-            elif form_type == 'unblock_ip' :
+            elif form_type == 'unblock_ip':
                 unblock_ip()
-            elif form_type == 'delete_rule' :
+            elif form_type == 'delete_rule':
                 delete_rule()
             else:
                 add_rule()
         rules = get_all_rules()
-        blocked_ips=get_blocked_ips()
+        blocked_ips = get_blocked_ips()
         if user_data:
             nom = user_data[0]
             return render_template('firewall.html', rules=rules, nom=nom, blocked_ips=blocked_ips)
     return redirect(url_for('login'))
+
 
 @app.route('/waf', methods=['GET', 'POST'])
 def waf():
@@ -936,6 +974,7 @@ def waf():
             )
             if not waf_manager.reload_nginx():
                 flash("Reload not accepted", "error")
+            # flash("Règle WAF modifiée avec succès ✏", "success")
         elif form_type == 'toggle_status':
             toggle_waf_rule(
                 selected_app,
@@ -944,6 +983,7 @@ def waf():
             )
             if not waf_manager.reload_nginx():
                 flash("Reload not accepted", "error")
+            # flash("Statut de la règle WAF modifié avec succès 🔄", "success")
         return redirect(url_for('waf', app=selected_app, page=page, status=status_filter, search=search_filter))
 
     rules, total_rules = get_all_waf_rules(page=page, per_page=per_page, filters=filters)
@@ -977,10 +1017,12 @@ def apps():
                 backend_host=request.form.get('backend_host'),
                 backend_port=int(request.form.get('backend_port')),
                 ssl_enabled=request.form.get('ssl_enabled') == 'on',
+                #                custom_rules=request.form.get('custom_rules') or None,
                 rate_limit=request.form.get('rate_limit') or None
             )
 
             if waf_manager.add_app(app_config):
+                # flash(f"Application {app_config.name} ajoutée avec succès ✅", "success")
                 # Reload nginx configuration
                 if waf_manager.reload_nginx():
                     flash("Configuration Nginx rechargée avec succès 🔄", "success")
@@ -1011,6 +1053,7 @@ def apps():
     app_stats = get_app_stats()
 
     return render_template('apps.html', nom=nom, managed_apps=managed_apps, app_stats=app_stats)
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

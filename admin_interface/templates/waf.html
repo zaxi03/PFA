@@ -28,7 +28,7 @@
         <div class="sidebar pe-4 pb-3">
             <nav class="navbar bg-secondary navbar-dark">
                 <a href="{{ url_for('dashboard') }}" class="navbar-brand mx-4 mb-3">
-                    <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>DarkPan</h3>
+                    <h3 class="text-primary"><i class="fas fa-shield-alt"></i> FireWAF</h3>
                 </a>
                 <div class="d-flex align-items-center ms-4 mb-4">
                     <div class="position-relative">
@@ -45,6 +45,7 @@
                     <a href="{{ url_for('logs') }}" class="nav-item nav-link"><i class="fas fa-file-alt me-2"></i>Logs</a>
                     <a href="{{ url_for('waf') }}" class="nav-item nav-link active"><i class="fas fa-shield-alt me-2"></i>WAF</a>
                     <a href="{{ url_for('firewall') }}" class="nav-item nav-link"><i class="fas fa-fire me-2"></i>Firewall</a>
+                    <a href="{{ url_for('apps') }}" class="nav-item nav-link"><i class="fas fa-globe me-2"></i>Apps</a>
                     <a href="{{ url_for('logout') }}" class="nav-item nav-link"><i class="fas fa-sign-out-alt me-2"></i>Log Out</a>
                 </div>
             </nav>
@@ -83,6 +84,95 @@
                         <div class="bg-secondary rounded h-100 p-4">
                             <h6 class="mb-4">Gestion des Règles WAF</h6>
 
+                            {% if not apps %}
+                            <div class="alert alert-danger">
+                              Aucune application disponible. Ajoutez-en une pour commencer.
+                            </div>
+                            {% endif %}
+
+                            <!-- Select web app -->
+                            <form method="GET" class="mb-4">
+                              <div class="col-md-3">
+                                  {% set selected = selected_app if selected_app in apps else apps[0] if apps else None %}
+
+                                  <label for="app-select">
+                                      Application sélectionnée : {{ selected or "aucune" }}
+                                  </label>
+
+                                  <select id="app-select" name="app" class="form-select" onchange="this.form.submit()">
+                                      {% for app in apps %}
+                                          <option value="{{ app }}" {% if app == selected %}selected{% endif %}>{{ app }}</option>
+                                      {% endfor %}
+                                  </select>
+                              </div>
+                            </form>
+
+                            {% if selected_app and apps %}
+                            <!-- Add Rule Form -->
+                            <form method="POST" class="mb-4">
+                                <input type="hidden" name="form_type" value="add_rule">
+                                <div class="mb-3">
+                                    <label for="rule_description" class="form-label">Description de la Règle</label>
+                                    <textarea class="form-control" id="rule_description" name="description" style="overflow:hidden" oninput="autoGrow(this)" required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="rule_variables" class="form-label">Variables (cibles)</label>
+                                    <input type="text" class="form-control" id="rule_variables" name="variables" placeholder='["REQUEST_URI"]' required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="rule_operators" class="form-label">Pattern de la Règle</label>
+                                    <input type="text" class="form-control" id="rule_operators" name="operators" placeholder='@beginsWith /test' required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="rule_actions" class="form-label">Actions</label>
+                                    <input type="text" class="form-control" id="rule_actions" name="actions" placeholder='["phase:1", "deny", "status:403", "log", "auditlog", "msg:'rule test'"]' required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Ajouter</button>
+                                {% with messages = get_flashed_messages(with_categories=true) %}
+                                    {% if messages %}
+                                      {% for category, message in messages %}
+                                        <span style="margin-left: 10px; color: {% if category == 'error' %}red{% elif category == 'success' %}green{% else %}black{% endif %};">
+                                          {{ message }}
+                                        </span>
+                                      {% endfor %}
+                                    {% endif %}
+                                  {% endwith %}
+                            </form>
+                            {% else %}
+                              <div class="alert alert-warning">
+                                Veuillez sélectionner une application pour gérer ses règles WAF.
+                              </div>
+                            {% endif %}
+                            <!-- Filters -->
+			    <form method="GET" class="row g-3 mb-4" action="/waf">
+				<div class="col-md-3">
+				    <input type="text" name="search" class="form-control" placeholder="Recherche..." value="{{ filters.get('search', '') }}">
+				</div>
+
+				<div class="col-md-3">
+				    <select name="search_field" class="form-select">
+					<option value="all" {% if filters.get('search_field') == 'all' %}selected{% endif %}>All Fields</option>
+					<option value="description" {% if filters.get('search_field') == 'description' %}selected{% endif %}>Description</option>
+					<option value="variables" {% if filters.get('search_field') == 'variables' %}selected{% endif %}>Variables</option>
+					<option value="actions" {% if filters.get('search_field') == 'actions' %}selected{% endif %}>Actions</option>
+                                        <option value="origin file" {% if filters.get('search_field') == 'actions' %}selected{% endif %}>Origin file</option>
+				    </select>
+				</div>
+
+				<div class="col-md-3">
+				    <select name="status" class="form-select">
+					<option value="">Tous les statuts</option>
+					<option value="active" {% if filters.get('status') == 'active' %}selected{% endif %}>Actif</option>
+					<option value="inactive" {% if filters.get('status') == 'inactive' %}selected{% endif %}>Inactif</option>
+					<option value="removed" {% if filters.get('status') == 'removed' %}selected{% endif %}>Supprimé</option>
+				    </select>
+				</div>
+
+				<div class="col-md-2">
+				    <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+				</div>
+			    </form>
+
                             <!-- Rules Table -->
                             <h6 class="mb-3">Liste des Règles</h6>
                             <div class="table-responsive">
@@ -96,22 +186,27 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        {% if selected_app and apps %}
                                         {% for rule in rules %}
                                         <tr>
-                                            <td>{{ rule[0] }}</td>
+                                            <td class="custom-tooltip" data-title="{{ rule[5] }}">{{ rule[0] }}</td>
                                             <td>{{ rule[1] }}</td>
                                             <td>{{ rule[2] }}</td>
                                             <td>
-                                                <form method="POST" style="display:inline-block;">
-                                                    <input type="hidden" name="form_type" value="delete_rule">
-                                                    <input type="hidden" name="rule_id" value="{{ rule[0] }}">
-                                                    <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
-                                                </form>
+                                                {% if 'custom' in rule[1] %}
+                                                  <form method="POST" style="display:inline-block;">
+                                                      <input type="hidden" name="form_type" value="delete_rule">
+                                                      <input type="hidden" name="rule_id" value="{{ rule[0] }}">
+                                                      <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+                                                  </form>
+                                                {% else %}
+                                                  <button type="button" class="btn btn-sm btn-danger btn-custom" disabled title="Cette règle ne peut pas être supprimée car ce n’est pas un fichier personnalisé.">Supprimer</button>
+                                                {% endif %}
                                                 <form method="POST" style="display:inline-block;">
                                                     <input type="hidden" name="form_type" value="update_rule">
                                                     <input type="hidden" name="rule_id" value="{{ rule[0] }}">
-                                                    <input type="text" name="rule_variables" value="{{ rule[3] }}" required class="form-control form-control-sm d-inline w-auto">
-                                                    <input type="text" name="rule_actions" value="{{ rule[4] }}" required class="form-control form-control-sm d-inline w-auto">
+                                                    <input type="text" name="variables" value="{{ rule[3] }}" required class="form-control form-control-sm d-inline w-auto">
+                                                    <input type="text" name="actions" value="{{ rule[4] }}" required class="form-control form-control-sm d-inline w-auto">
                                                     <button type="submit" class="btn btn-sm btn-warning">Modifier</button>
                                                 </form>
                                                 <form method="POST" style="display:inline-block;">
@@ -125,31 +220,32 @@
                                             </td>
                                         </tr>
                                         {% endfor %}
+                                        {% endif %}
                                     </tbody>
                                 </table>
                             </div>
 
-                            <!-- Add Rule Form -->
-                            <form method="POST" class="mb-4">
-                                <input type="hidden" name="form_type" value="add_rule">
-                                <div class="mb-3">
-                                    <label for="rule_description" class="form-label">Description de la Règle</label>
-                                    <input type="text" class="form-control" id="rule_description" name="rule_description" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="rule_variables" class="form-label">Variables (cibles)</label>
-                                    <input type="text" class="form-control" id="rule_variables" name="rule_variables" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="rule_operators" class="form-label">Pattern de la Règle</label>
-                                    <input type="text" class="form-control" id="rule_operators" name="rule_operators" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="rule_actions" class="form-label">Actions</label>
-                                    <input type="text" class="form-control" id="rule_actions" name="rule_actions" required>
-                                </div>
-                                <button type="submit" class="btn btn-primary">Ajouter</button>
-                            </form>
+			    <nav aria-label="Page navigation">
+                              {% if selected_app in apps %}
+			      <ul class="pagination justify-content-center">
+				{% if page > 1 %}
+				  <li class="page-item">
+				    <a class="page-link" href="{{ url_for('waf', page=page-1, **filters) }}">Précédent</a>
+				  </li>
+				{% endif %}
+				{% for p in range(1, total_pages + 1) %}
+				  <li class="page-item {% if p == page %}active{% endif %}">
+				    <a class="page-link" href="{{ url_for('waf', page=p, **filters) }}">{{ p }}</a>
+				  </li>
+				{% endfor %}
+				{% if page < total_pages %}
+				  <li class="page-item">
+				    <a class="page-link" href="{{ url_for('waf', page=page+1, **filters) }}">Suivant</a>
+				  </li>
+				{% endif %}
+			      </ul>
+                              {% endif %}
+			    </nav>
 
                         </div>
                     </div>
@@ -160,6 +256,13 @@
 
         <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
     </div>
+
+    <script>
+      function autoGrow(element) {
+        element.style.height = "5px";           // Reset height to shrink if deleting
+        element.style.height = (element.scrollHeight) + "px";  // Set height to fit content
+      }
+    </script>
 
     <!-- JS Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
