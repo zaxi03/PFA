@@ -659,17 +659,20 @@ def delete_waf_rule(app, rule_id):
 
 def update(target,rule_id, db_, res_):
     statement = ''
+    if target == 'Action':
+        statement = f'\nSecRuleUpdate{target}ById {rule_id} "{",".join(res_)}"\n'
+        return statement
     for x, y in zip(db_, res_):
         if x != y:
-            statement += f'\nSecRuleUpdate{target}ById {rule_id} {x},{y}\n'
+            statement += f'\nSecRuleUpdate{target}ById {rule_id} "{x},{y}"\n'
 
     l = len(db_) - len(res_)
     if l > 0:
         for i in range(l):
-            statement += f'\nSecRuleUpdate{target}ById {rule_id} {db_[-i-1]},\n'
+            statement += f'\nSecRuleUpdate{target}ById {rule_id} "{db_[-i-1]},"\n'
     elif l < 0:
         for i in range(-l):
-            statement += f'\nSecRuleUpdate{target}ById {rule_id} {res_[len(db_)+i]}\n'
+            statement += f'\nSecRuleUpdate{target}ById {rule_id} "{res_[len(db_)+i]}"\n'
     return statement
 
 def update_waf_rule(app, rule_id, variables = None, actions = None):
@@ -683,7 +686,6 @@ def update_waf_rule(app, rule_id, variables = None, actions = None):
     db_act = loads(db_act)
         
     if variables:
-        flash("variables accessed","success")
         res_var = loads(variables)
 #        res_var = "|".join(res_var)
         target = update('Target', rule_id, db_var, res_var)
